@@ -16,27 +16,43 @@ import sys
 
 import numpy as np
 
+import os
+
+import shutil
+
 class DCGAN():
-    
+
     def __init__(self):
-        self.path = "/volumes/data/dataset/gan/MNIST/dcgan/dcgan_generated_images/"
+        self.path = "dcgan_generated_images"
+        if os.path.exists(self.path):
+            if os.path.exists('bu_' + self.path):
+                shutil.rmtree('bu_' + self.path)
+                shutil.copytree(self.path, 'bu_' + self.path)
+            else:
+                shutil.copytree(self.path, 'bu_' + self.path)
+            shutil.rmtree(self.path)
+            os.mkdir(self.path)
+            print ('remove past, made bu')
+        else:
+            os.mkdir(self.path)
+            print ('made')
         #mnistデータ用の入力データサイズ
-        self.img_rows = 28 
+        self.img_rows = 28
         self.img_cols = 28
         self.channels = 1
         self.img_shape = (self.img_rows, self.img_cols, self.channels)
-        
-        # 潜在変数の次元数 
+
+        # 潜在変数の次元数
         self.z_dim = 5
 
         # 画像保存の際の列、行数
         self.row = 5
         self.col = 5
         self.row2 = 1 # 連続潜在変数用
-        self.col2 = 10# 連続潜在変数用 
-        
+        self.col2 = 10# 連続潜在変数用
+
         # 画像生成用の固定された入力潜在変数
-        self.noise_fix1 = np.random.normal(0, 1, (self.row * self.col, self.z_dim)) 
+        self.noise_fix1 = np.random.normal(0, 1, (self.row * self.col, self.z_dim))
         # 連続的に潜在変数を変化させる際の開始、終了変数
         self.noise_fix2 = np.random.normal(0, 1, (1, self.z_dim))
         self.noise_fix3 = np.random.normal(0, 1, (1, self.z_dim))
@@ -53,7 +69,7 @@ class DCGAN():
 
         # discriminatorモデル
         self.discriminator = self.build_discriminator()
-        self.discriminator.compile(loss='binary_crossentropy', 
+        self.discriminator.compile(loss='binary_crossentropy',
             optimizer=discriminator_optimizer,
             metrics=['accuracy'])
 
@@ -93,7 +109,7 @@ class DCGAN():
     def build_discriminator(self):
 
         img_shape = (self.img_rows, self.img_cols, self.channels)
-        
+
         model = Sequential()
         model.add(Convolution2D(64,5,5, subsample=(2,2),\
                   border_mode='same', input_shape=img_shape))
@@ -105,9 +121,9 @@ class DCGAN():
         model.add(LeakyReLU(0.2))
         model.add(Dropout(0.5))
         model.add(Dense(1))
-        model.add(Activation('sigmoid'))   
+        model.add(Activation('sigmoid'))
         return model
-    
+
     def build_combined1(self):
         self.discriminator.trainable = False
         model = Sequential([self.generator, self.discriminator])
@@ -127,7 +143,51 @@ class DCGAN():
         model.load_weights('cnn_weight.h5')
         return model
 
+    def save_grad(self, model):
+        """Return the gradient of every trainable weight in model
 
+        Parameters
+        -----------
+        model : a keras model instance
+
+        First, find all tensors which are trainable in the model. Surprisingly,
+        `model.trainable_weights` will return tensors for which
+        trainable=False has been set on their layer (last time I checked), hence the extra check.
+        Next, get the gradients of the loss with respect to the weights.
+
+        """
+        #weights = [tensor for tensor in model.trainable_weights if model.get_layer(tensor.name[:-2]).trainable]
+        weights = [tensor for tensor in model.trainable_weights]
+        optimizer = model.optimizer
+
+        grads = optimizer.get_gradients(model.total_loss, weights)
+
+        print (weights)
+
+    def save_param(self, epoch):
+        g_para = self.generator.get_weights()
+        d_para = self.discriminator.get_weights()
+        g_abs_max = 0
+        g_abs_min = 1
+        d_abs_max = 0
+        d_abs_min = 1
+        for data in g_para:
+            if g_abs_max < max(abs(data.reshape(-1))):
+                g_abs_max = max(abs(data.reshape(-1)))
+            if g_abs_min > min(abs(data[data!=0].reshape(-1))):
+                g_abs_min = min(abs(data[data!=0].reshape(-1)))
+        epoch_g_data = [epoch,g_abs_min, g_abs_max, np.log2(g_abs_max/g_abs_min)]
+        for data in d_para:
+            if d_abs_max < max(abs(data.reshape(-1))):
+                d_abs_max = max(abs(data.reshape(-1)))
+            if d_abs_min > min(abs(data[data!=0].reshape(-1))):
+                d_abs_min = min(abs(data[data!=0].reshape(-1)))
+        epoch_d_data = [epoch,d_abs_min, d_abs_max, np.log2(d_abs_max/d_abs_min)]
+        with open(self.path + 'g_epoch_data.txt', 'a') as f:
+            f.write(str(epoch)+','+str(g_abs_min)+','+str(g_abs_max)+','+str(np.log2(g_abs_max/g_abs_min)) + '\n')
+        with open(self.path + 'd_epoch_data.txt', 'a') as g:
+            g.write(str(epoch)+','+str(d_abs_min)+','+str(d_abs_max)+','+str(np.log2(d_abs_max/d_abs_min)) + '\n')
+        #self.generator.save_weights(self.path + "generator_%s.h5" % epoch)
 
     def train(self, epochs, batch_size=128, save_interval=50):
 
@@ -171,8 +231,13 @@ class DCGAN():
             d_predict = self.discriminator.predict_classes(np.concatenate([gen_imgs,imgs]), verbose=0)
             d_predict = np.sum(d_predict)
 
-# classifierの予測
+            # classifierの予測
             c_predict = self.classifier.predict_classes(np.concatenate([gen_imgs,imgs]), verbose=0)
+
+            weights = [tensor for tensor in self.discriminator.trainable_weights if self.discriminator.get_layer(tensor.name[:-2]).trainable]
+            print (weights)
+            d_grads =self.discriminator.optimizer.get_gradients(d_loss, weights)
+            print (d_grads)
 
 
             # ---------------------
@@ -182,7 +247,7 @@ class DCGAN():
             noise = np.random.normal(0, 1, (batch_size, self.z_dim))
 
 
-            # 生成データの正解ラベルは本物（1） 
+            # 生成データの正解ラベルは本物（1）
             valid_y = np.array([1] * batch_size)
 
             # Train the generator
@@ -192,6 +257,11 @@ class DCGAN():
             # 進捗の表示
             print ("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (epoch, d_loss[0], 100*d_loss[1], g_loss))
 
+            if epoch % 100 == 0:
+                self.save_param(epoch)
+                #self.save_grad(self.generator)
+
+
             # np.ndarrayにloss関数を格納
             self.g_loss_array[epoch] = g_loss
             self.d_loss_array[epoch] = d_loss[0]
@@ -200,7 +270,7 @@ class DCGAN():
             self.c_predict_class_list.append(c_predict)
 
             if epoch % save_interval == 0:
-                
+
                 # 毎回異なる乱数から画像を生成
                 self.save_imgs(self.row, self.col, epoch, '', noise)
                 # 毎回同じ値から画像を生成
@@ -223,7 +293,7 @@ class DCGAN():
                 plt.close()
 
 
-       
+
                 # 学習結果をプロット
                 fig, ax = plt.subplots(4,1, figsize=(8.27,11.69))
                 ax[0].plot(self.g_loss_array[:epoch])
@@ -243,18 +313,18 @@ class DCGAN():
         self.discriminator.save_weights(self.path + "discriminator_%s.h5" % epoch)
 
 
-            
+
 
     def save_imgs(self, row, col, epoch, filename, noise):
         # row, col
         # 生成画像を敷き詰めるときの行数、列数
-    
+
         gen_imgs = self.generator.predict(noise)
-    
+
         # 生成画像を0-1に再スケール
         gen_imgs = 0.5 * gen_imgs + 0.5
-    
-    
+
+
         fig, axs = plt.subplots(row, col)
         cnt = 0
         if row == 1:
@@ -273,14 +343,8 @@ class DCGAN():
         fig.suptitle("epoch: %5d" % epoch)
         fig.savefig(self.path + "mnist_%s_%d.png" % (filename, epoch))
         plt.close()
-    
- 
+
+
 if __name__ == '__main__':
     gan = DCGAN()
     gan.train(epochs=100000, batch_size=32, save_interval=1000)
-
-
-
-
-
-
