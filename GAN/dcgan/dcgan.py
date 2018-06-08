@@ -10,6 +10,9 @@ from keras.models import Sequential, Model, load_model
 
 from keras.optimizers import Adam
 
+import matplotlib as mpl
+mpl.use('Agg')
+
 import matplotlib.pyplot as plt
 
 import sys
