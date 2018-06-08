@@ -234,10 +234,10 @@ class DCGAN():
             # classifierの予測
             c_predict = self.classifier.predict_classes(np.concatenate([gen_imgs,imgs]), verbose=0)
 
-            weights = [tensor for tensor in self.discriminator.trainable_weights if self.discriminator.get_layer(tensor.name[:-2]).trainable]
-            print (weights)
-            d_grads =self.discriminator.optimizer.get_gradients(d_loss, weights)
-            print (d_grads)
+            # weights = [tensor for tensor in self.discriminator.trainable_weights if self.discriminator.get_layer(tensor.name[:-2]).trainable]
+            # print (weights)
+            # d_grads =self.discriminator.optimizer.get_gradients(d_loss, weights)
+            # print (d_grads)
 
 
             # ---------------------
