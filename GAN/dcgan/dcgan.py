@@ -26,7 +26,7 @@ import shutil
 class DCGAN():
 
     def __init__(self):
-        self.path = "dcgan_generated_images"
+        self.path = "dcgan_generated_images/"
         if os.path.exists(self.path):
             if os.path.exists('bu_' + self.path):
                 shutil.rmtree('bu_' + self.path)
