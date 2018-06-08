@@ -327,17 +327,17 @@ class DCGAN():
 
         fig, axs = plt.subplots(row, col)
         cnt = 0
-        if row == 1:
-            for j in range(col):
-                axs[j].imshow(gen_imgs[cnt, :,:,0], cmap='gray')
-                axs[j].axis('off')
-                cnt += 1
-        else:
-            for i in range(row):
-                for j in range(col):
-                    axs[i,j].imshow(gen_imgs[cnt, :,:,0], cmap='gray')
-                    axs[i,j].axis('off')
-                    cnt += 1
+        # if row == 1:
+        #     for j in range(col):
+        #         axs[j].imshow(gen_imgs[cnt, :,:,0], cmap='gray')
+        #         axs[j].axis('off')
+        #         cnt += 1
+        # else:
+        #     for i in range(row):
+        #         for j in range(col):
+        #             axs[i,j].imshow(gen_imgs[cnt, :,:,0], cmap='gray')
+        #             axs[i,j].axis('off')
+        #             cnt += 1
 
         #fig.savefig("images/mnist_%s_%d.png" % (filename, epoch))
         fig.suptitle("epoch: %5d" % epoch)
