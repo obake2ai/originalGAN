@@ -176,7 +176,7 @@ class DCGAN():
 
         print (weights)
 
-    def save_param(self, epoch):
+    def save_param(self, epoch, g_loss, d_loss, d_acc):
         g_para = self.generator.get_weights()
         d_para = self.discriminator.get_weights()
         g_abs_max = 0
@@ -188,17 +188,17 @@ class DCGAN():
                 g_abs_max = max(abs(data.reshape(-1)))
             if g_abs_min > min(abs(data[data!=0].reshape(-1))):
                 g_abs_min = min(abs(data[data!=0].reshape(-1)))
-        epoch_g_data = [epoch,g_abs_min, g_abs_max, np.log2(g_abs_max/g_abs_min)]
+        epoch_g_data = [epoch,g_abs_min, g_abs_max, np.log2(g_abs_max/g_abs_min), g_loss]
         for data in d_para:
             if d_abs_max < max(abs(data.reshape(-1))):
                 d_abs_max = max(abs(data.reshape(-1)))
             if d_abs_min > min(abs(data[data!=0].reshape(-1))):
                 d_abs_min = min(abs(data[data!=0].reshape(-1)))
-        epoch_d_data = [epoch,d_abs_min, d_abs_max, np.log2(d_abs_max/d_abs_min)]
+        epoch_d_data = [epoch,d_abs_min, d_abs_max, np.log2(d_abs_max/d_abs_min), d_loss, d_acc]
         with open(self.path + 'g_epoch_data.txt', 'a') as f:
-            f.write(str(epoch)+','+str(g_abs_min)+','+str(g_abs_max)+','+str(np.log2(g_abs_max/g_abs_min)) + '\n')
+            f.write(str(epoch)+','+str(g_abs_min)+','+str(g_abs_max)+','+str(np.log2(g_abs_max/g_abs_min)) + ',' + str(g_loss) + '\n')
         with open(self.path + 'd_epoch_data.txt', 'a') as g:
-            g.write(str(epoch)+','+str(d_abs_min)+','+str(d_abs_max)+','+str(np.log2(d_abs_max/d_abs_min)) + '\n')
+            g.write(str(epoch)+','+str(d_abs_min)+','+str(d_abs_max)+','+str(np.log2(d_abs_max/d_abs_min)) + ',' + str(d_loss) + ',' + str(d_acc) + '\n')
         #self.generator.save_weights(self.path + "generator_%s.h5" % epoch)
 
     def quantize_param(self):
@@ -283,17 +283,16 @@ class DCGAN():
             # 進捗の表示
             print ("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (epoch, d_loss[0], 100*d_loss[1], g_loss))
 
-            if epoch % 500 == 0:
-                self.save_param(epoch)
-                #self.save_grad(self.generator)
-
-
             # np.ndarrayにloss関数を格納
             self.g_loss_array[epoch] = g_loss
             self.d_loss_array[epoch] = d_loss[0]
             self.d_accuracy_array[epoch] = 100*d_loss[1]
             self.d_predict_true_num_array[epoch] = d_predict
             self.c_predict_class_list.append(c_predict)
+
+            if epoch % 500 == 0:
+                self.save_param(epoch, self.g_loss_array[epoch], self.d_loss_array[epoch], self.d_accuracy_array[epoch])
+                #self.save_grad(self.generator)
 
             if epoch % save_interval == 0:
 
@@ -341,6 +340,7 @@ class DCGAN():
 
 
 
+
     def save_imgs(self, row, col, epoch, filename, noise):
         # row, col
         # 生成画像を敷き詰めるときの行数、列数
@@ -353,20 +353,21 @@ class DCGAN():
 
         fig, axs = plt.subplots(row, col)
         cnt = 0
-        # if row == 1:
-        #     for j in range(col):
-        #         axs[j].imshow(gen_imgs[cnt, :,:,0], cmap='gray')
-        #         axs[j].axis('off')
-        #         cnt += 1
-        # else:
-        #     for i in range(row):
-        #         for j in range(col):
-        #             axs[i,j].imshow(gen_imgs[cnt, :,:,0], cmap='gray')
-        #             axs[i,j].axis('off')
-        #             cnt += 1
+        if row == 1:
+            for j in range(col):
+                axs[j].imshow(gen_imgs[cnt, :,:,0], cmap='gray')
+                axs[j].axis('off')
+                cnt += 1
+        else:
+            for i in range(row):
+                for j in range(col):
+                    axs[i,j].imshow(gen_imgs[cnt, :,:,0], cmap='gray')
+                    axs[i,j].axis('off')
+                    cnt += 1
 
         #fig.savefig("images/mnist_%s_%d.png" % (filename, epoch))
         fig.suptitle("epoch: %5d" % epoch)
+        # if filename == 'hist'
         fig.savefig(self.path + "mnist_%s_%d.png" % (filename, epoch))
         plt.close()
 
