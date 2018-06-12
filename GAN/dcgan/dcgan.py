@@ -28,7 +28,7 @@ from trQtz import transQuantization
 class DCGAN():
 
     def __init__(self):
-        self.path = "raw_train/"
+        self.path = "maxcut16/"
         if os.path.exists(self.path):
             if os.path.exists('bu_' + self.path):
                 shutil.rmtree('bu_' + self.path)
