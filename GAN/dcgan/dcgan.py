@@ -23,6 +23,8 @@ import os
 
 import shutil
 
+from trQtz import transQuantization
+
 class DCGAN():
 
     def __init__(self):
@@ -87,6 +89,13 @@ class DCGAN():
 
         # Classifierモデル
         self.classifier = self.build_classifier()
+
+        # 量子化条件 [指数部bit, 仮数部bit, ゲタ]
+        self.g_qtz = [5, 10, 15]
+        self.d_qtz = [5, 10, 15]
+
+        print ('G Quantize info: e=%d, m=%d, b=%d'%(self.g_qtz[0], self.g_qtz[1], self.g_qtz[2]))
+        print ('D Quantize info: e=%d, m=%d, b=%d'%(self.d_qtz[0], self.d_qtz[1], self.d_qtz[2]))
 
     def build_generator(self):
 
@@ -192,21 +201,22 @@ class DCGAN():
             g.write(str(epoch)+','+str(d_abs_min)+','+str(d_abs_max)+','+str(np.log2(d_abs_max/d_abs_min)) + '\n')
         #self.generator.save_weights(self.path + "generator_%s.h5" % epoch)
 
-    def quantize_param(self, max_th):
+    def quantize_param(self):
         g_para = self.generator.get_weights()
         d_para = self.discriminator.get_weights()
-        g_para = self.replace_param_in_list(g_para, max_th)
-        d_para = self.replace_param_in_list(d_para, max_th)
+        g_para = self.replace_param_in_list(g_para, self.g_qtz)
+        d_para = self.replace_param_in_list(d_para, self.d_qtz)
         self.generator.set_weights(g_para)
         self.discriminator.set_weights(d_para)
 
-    def replace_param_in_list(self, input_list, max_th):
+    def replace_param_in_list(self, input_list, qtz_info):
         for data in input_list:
-            data[data > max_th] = max_th
+            data = transQuantization(np.array(data), qtz_info).tolist()
+            #data[data > max_th] = max_th
         return input_list
 
     def train(self, epochs, batch_size=128, save_interval=50):
-        self.quantize_param(4)
+        self.quantize_param()
         # mnistデータの読み込み
         (X_train, _), (_, _) = mnist.load_data()
 
