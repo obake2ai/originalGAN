@@ -28,7 +28,7 @@ from trQtz import transQuantization
 class DCGAN():
 
     def __init__(self):
-        self.path = "qtz16_result/"
+        self.path = "max4/"
         if os.path.exists(self.path):
             if os.path.exists('bu_' + self.path):
                 shutil.rmtree('bu_' + self.path)
@@ -204,8 +204,10 @@ class DCGAN():
     def quantize_param(self):
         g_para = self.generator.get_weights()
         d_para = self.discriminator.get_weights()
-        g_para = self.replace_param_in_list(g_para, self.g_qtz)
-        d_para = self.replace_param_in_list(d_para, self.d_qtz)
+        # g_para = self.replace_param_in_list(g_para, self.g_qtz)
+        # d_para = self.replace_param_in_list(d_para, self.d_qtz)
+        g_para = self.replace_param_in_list_max(g_para, 4)
+        d_para = self.replace_param_in_list_max(d_para, 4)
         self.generator.set_weights(g_para)
         self.discriminator.set_weights(d_para)
 
@@ -213,6 +215,12 @@ class DCGAN():
         for data in input_list:
             data = transQuantization(np.array(data), qtz_info).tolist()
             #data[data > max_th] = max_th
+        return input_list
+
+    def replace_param_in_list_max(self, max_th):
+        for data in input_list:
+            #data = transQuantization(np.array(data), qtz_info).tolist()
+            data[data > max_th] = max_th
         return input_list
 
     def train(self, epochs, batch_size=128, save_interval=50):
