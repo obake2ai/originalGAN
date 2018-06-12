@@ -192,8 +192,21 @@ class DCGAN():
             g.write(str(epoch)+','+str(d_abs_min)+','+str(d_abs_max)+','+str(np.log2(d_abs_max/d_abs_min)) + '\n')
         #self.generator.save_weights(self.path + "generator_%s.h5" % epoch)
 
-    def train(self, epochs, batch_size=128, save_interval=50):
+    def quantize_param(self, max_th):
+        g_para = self.generator.get_weights()
+        d_para = self.discriminator.get_weights()
+        g_para = self.replace_param_in_list(g_para, max_th)
+        d_para = self.replace_param_in_list(d_para, max_th)
+        self.generator.set_weights(g_para)
+        self.discriminator.set_weights(d_para)
 
+    def replace_param_in_list(self, input_list, max_th):
+        for data in input_list:
+            data[data > max_th] = max_th
+        return input_list
+
+    def train(self, epochs, batch_size=128, save_interval=50):
+        self.quantize_param(4)
         # mnistデータの読み込み
         (X_train, _), (_, _) = mnist.load_data()
 
@@ -260,7 +273,7 @@ class DCGAN():
             # 進捗の表示
             print ("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (epoch, d_loss[0], 100*d_loss[1], g_loss))
 
-            if epoch % 100 == 0:
+            if epoch % 500 == 0:
                 self.save_param(epoch)
                 #self.save_grad(self.generator)
 
