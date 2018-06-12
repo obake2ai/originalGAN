@@ -28,7 +28,7 @@ from trQtz import transQuantization
 class DCGAN():
 
     def __init__(self):
-        self.path = "maxcut16/"
+        self.path = "qtz16bit/"
         if os.path.exists(self.path):
             if os.path.exists('bu_' + self.path):
                 shutil.rmtree('bu_' + self.path)
@@ -204,10 +204,10 @@ class DCGAN():
     def quantize_param(self):
         g_para = self.generator.get_weights()
         d_para = self.discriminator.get_weights()
-        # g_para = self.replace_param_in_list(g_para, self.g_qtz)
-        # d_para = self.replace_param_in_list(d_para, self.d_qtz)
-        g_para = self.replace_param_in_list_max(g_para, 16)
-        d_para = self.replace_param_in_list_max(d_para, 16)
+        g_para = self.replace_param_in_list(g_para, self.g_qtz)
+        d_para = self.replace_param_in_list(d_para, self.d_qtz)
+        # g_para = self.replace_param_in_list_max(g_para, 16)
+        # d_para = self.replace_param_in_list_max(d_para, 16)
         self.generator.set_weights(g_para)
         self.discriminator.set_weights(d_para)
 
