@@ -217,7 +217,7 @@ class DCGAN():
             #data[data > max_th] = max_th
         return input_list
 
-    def replace_param_in_list_max(self, max_th):
+    def replace_param_in_list_max(self, input_list, max_th):
         for data in input_list:
             #data = transQuantization(np.array(data), qtz_info).tolist()
             data[data > max_th] = max_th
