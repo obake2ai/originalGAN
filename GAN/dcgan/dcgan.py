@@ -206,8 +206,8 @@ class DCGAN():
         d_para = self.discriminator.get_weights()
         # g_para = self.replace_param_in_list(g_para, self.g_qtz)
         # d_para = self.replace_param_in_list(d_para, self.d_qtz)
-        g_para = self.replace_param_in_list_max(g_para, 4)
-        d_para = self.replace_param_in_list_max(d_para, 4)
+        g_para = self.replace_param_in_list_max(g_para, 16)
+        d_para = self.replace_param_in_list_max(d_para, 16)
         self.generator.set_weights(g_para)
         self.discriminator.set_weights(d_para)
 
@@ -239,7 +239,7 @@ class DCGAN():
         self.d_predict_true_num_array = np.zeros(epochs)
 
         for epoch in range(epochs):
-            #self.quantize_param()
+            self.quantize_param()
 
             # ---------------------
             #  Discriminatorの学習
