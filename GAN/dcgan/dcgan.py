@@ -28,7 +28,7 @@ from trQtz import transQuantization
 class DCGAN():
 
     def __init__(self):
-        self.path = "max4/"
+        self.path = "raw_train/"
         if os.path.exists(self.path):
             if os.path.exists('bu_' + self.path):
                 shutil.rmtree('bu_' + self.path)
@@ -224,7 +224,6 @@ class DCGAN():
         return input_list
 
     def train(self, epochs, batch_size=128, save_interval=50):
-        self.quantize_param()
         # mnistデータの読み込み
         (X_train, _), (_, _) = mnist.load_data()
 
@@ -240,6 +239,7 @@ class DCGAN():
         self.d_predict_true_num_array = np.zeros(epochs)
 
         for epoch in range(epochs):
+            #self.quantize_param()
 
             # ---------------------
             #  Discriminatorの学習
