@@ -298,11 +298,8 @@ class DCGAN():
             self.d_predict_true_num_array[epoch] = d_predict
             self.c_predict_class_list.append(c_predict)
 
-            if epoch % 500 == 0:
-                self.save_param(epoch, self.g_loss_array[epoch], self.d_loss_array[epoch], self.d_accuracy_array[epoch])
-                #self.save_grad(self.generator)
-
             if epoch % save_interval == 0:
+                self.save_param(epoch, self.g_loss_array[epoch], self.d_loss_array[epoch], self.d_accuracy_array[epoch])
 
                 # 毎回異なる乱数から画像を生成
                 self.save_imgs(self.row, self.col, epoch, '', noise)
@@ -382,4 +379,4 @@ class DCGAN():
 
 if __name__ == '__main__':
     gan = DCGAN()
-    gan.train(epochs=100000, batch_size=32, save_interval=5000)
+    gan.train(epochs=1000000, batch_size=32, save_interval=10000)
